@@ -1,4 +1,4 @@
-# RxMo - ReactiveX programming
+# RxMo - Reactive programming with Motoko
 
 For Motoko language @ Internet Computer
 
