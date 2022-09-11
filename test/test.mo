@@ -1,11 +1,16 @@
 import Debug "mo:base/Debug";
-import {Observable; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap} "../src/observable";
+import {Observable; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap; distinct} "../src/observable";
 import O "../src/observable";
 
 import Principal "mo:base/Principal";
+import Buffer "mo:base/Buffer";
+
 import Time "mo:base/Time";
 import Array "mo:base/Array";
-import Nat16 "mo:base/Nat16"
+import Nat16 "mo:base/Nat16";
+import Nat32 "mo:base/Nat32";
+import Nat "mo:base/Nat";
+
 
 // ----- Basic
 Debug.print("=====  Basic ( Map )");
@@ -43,6 +48,24 @@ pipe3(
 let oz = map<Nat,Nat16>( func (val)  {
         Nat16.fromNat(val + 10 )
 })(ob);
+
+// ----- Basic
+Debug.print("=====  Basic ( Distinct )");
+var tst__x : Text = "";
+
+pipe2(
+    of<Nat>( [1,1,2,1,3,4,4,5,5,5] ),
+    distinct<Nat>( Nat32.fromNat, Nat.equal)
+    ).subscribe({
+    next = func (v) {
+        tst__x := tst__x # " " # debug_show(v);
+    };
+    complete = func () {
+        tst__x := tst__x # " | ";
+        if (tst__x == " 3 | ") tst__x := tst__x # "- OK ";
+        Debug.print(tst__x);
+    }
+});
 
 
 // ----- Basic

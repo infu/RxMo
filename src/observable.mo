@@ -1,8 +1,12 @@
 import List "mo:base/List";
 import Buffer "mo:base/Buffer";
+import TrieMap "mo:base/TrieMap";
+import TrieSet "mo:base/TrieSet";
+import Hash "mo:base/Hash";
 import Debug "mo:base/Debug";
 
 module {
+
 
   public type Operator<X,Y> = (Obs<X>) -> (Obs<Y>);
 
@@ -14,6 +18,30 @@ module {
           x.subscribe({
             next = func(v) {
                subscriber.next( project(v))
+            };
+            complete = func() {
+               subscriber.complete()
+            }
+          })
+        });
+      }
+  };
+
+  //Returns an Observable that emits all items emitted by the source Observable that are distinct by comparison from previous items.
+  public func distinct<X>( hash: (X) -> Hash.Hash, eq: (X, X) -> Bool ) : (Obs<X>) -> (Obs<X>) {
+    return func ( x : Obs<X> ) {
+
+        Observable<X>( func (subscriber) {
+
+          var distinctKeys: TrieSet.Set<X> = TrieSet.empty<X>();
+
+          x.subscribe({
+            next = func(v) {
+              if (TrieSet.mem<X>(distinctKeys, v, hash(v), eq) == false) {
+                distinctKeys := TrieSet.put<X>(distinctKeys, v, hash(v), eq);
+                subscriber.next( v );
+              };
+
             };
             complete = func() {
                subscriber.complete()
@@ -145,6 +173,7 @@ module {
   public func pipe5<A,B,C,D,E>(ob: Obs<A>, op1 : Operator<A,B>, op2 : Operator<B,C>, op3 : Operator<C,D>, op4 : Operator<D,E>) : Obs<E> {
         op4(op3(op2(op1(ob))))
   };
+
 
   public type SubscriberFn<A> = (Listener<A>) -> ();
 
