@@ -12,6 +12,9 @@ Missing:
 - Many operators
 - Schedulers
 
+## Playground example 
+https://m7sm4-2iaaa-aaaab-qabra-cai.raw.ic0.app/?tag=3129927563
+
 ## Example
 ```mo
 pipe2(
