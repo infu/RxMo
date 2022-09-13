@@ -3,12 +3,70 @@ import Buffer "mo:base/Buffer";
 import TrieMap "mo:base/TrieMap";
 import TrieSet "mo:base/TrieSet";
 import Hash "mo:base/Hash";
+import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
 
 module {
 
 
   public type Operator<X,Y> = (Obs<X>) -> (Obs<Y>);
+
+
+  // Emits the values emitted by the source Observable until a notifier Observable emits a value.
+  // `takeUntil` subscribes and begins mirroring the source Observable. It also
+  // monitors a second Observable, `notifier` that you provide. If the `notifier`
+  // emits a value, the output Observable stops mirroring the source Observable
+  // and completes. If the `notifier` doesn't emit any value and completes
+  // then `takeUntil` will pass all values.
+  public func takeUntil<X,Y>( obsUntil: Obs<Y> ) : (Obs<X>) -> (Obs<X>) {
+    return func ( x : Obs<X> ) {
+        var isComplete : Bool = false;
+        Observable<X>( func (subscriber) {
+
+          obsUntil.subscribe({
+            next = func (v) { 
+              if (isComplete) return;
+              isComplete := true;
+              subscriber.complete();
+              };
+            complete = func () {}
+          });
+
+          x.subscribe({
+            next = func(v) {
+               if (isComplete) return;
+               subscriber.next( v );
+            };
+            complete = func() {
+              if (isComplete) return;
+              isComplete := true;
+              subscriber.complete();
+            }
+          })
+
+        });
+
+      }
+  };
+
+
+  // Applies an accumulator function over the source Observable, and returns the accumulated result when the source completes, given an optional initial value.
+  public func reduce<X,Y>( project: (Y, X) -> (Y), initial: Y ) : (Obs<X>) -> (Obs<Y>) {
+    var acc = initial; 
+    return func ( x : Obs<X> ) {
+        Observable<Y>( func (subscriber) {
+          x.subscribe({
+            next = func(v) {
+               acc := project(acc, v);
+            };
+            complete = func() {
+              subscriber.next( acc );
+              subscriber.complete();
+            }
+          })
+        });
+      }
+  };
 
   // Applies a given project function to each value emitted by the source Observable,
   // and emits the resulting values as an Observable.
@@ -19,33 +77,31 @@ module {
             next = func(v) {
                subscriber.next( project(v))
             };
-            complete = func() {
-               subscriber.complete()
-            }
+            complete = subscriber.complete
           })
         });
       }
   };
 
   //Returns an Observable that emits all items emitted by the source Observable that are distinct by comparison from previous items.
-  public func distinct<X>( hash: (X) -> Hash.Hash, eq: (X, X) -> Bool ) : (Obs<X>) -> (Obs<X>) {
+  public func distinct<X>( keySelect: (X) -> Blob ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
 
         Observable<X>( func (subscriber) {
 
-          var distinctKeys: TrieSet.Set<X> = TrieSet.empty<X>();
+          var distinctKeys: TrieSet.Set<Blob> = TrieSet.empty<Blob>();
 
           x.subscribe({
             next = func(v) {
-              if (TrieSet.mem<X>(distinctKeys, v, hash(v), eq) == false) {
-                distinctKeys := TrieSet.put<X>(distinctKeys, v, hash(v), eq);
+              let myKey = keySelect(v);
+              let myHash = Blob.hash(myKey);
+              if (TrieSet.mem<Blob>(distinctKeys, myKey, myHash, Blob.equal) == false) {
+                distinctKeys := TrieSet.put<Blob>(distinctKeys, myKey, myHash, Blob.equal);
                 subscriber.next( v );
               };
 
             };
-            complete = func() {
-               subscriber.complete()
-            }
+            complete = subscriber.complete
           })
         });
     }
@@ -184,8 +240,10 @@ module {
 
       // Subject specific
       var listeners = Buffer.Buffer<Listener<A>>(10);
+      // public var isComplete: Bool = false; // This doesnt affect Observable, only Subject
 
       public func next( val: A ) : () {
+        // if (isComplete) return;
         switch(otype) { case (#Observer(_)) return; case (_) (); };
         for (li in listeners.vals()) {
           li.next( val );
@@ -193,6 +251,8 @@ module {
       };
 
       public func complete() : () {
+        // if (isComplete) return;
+        // isComplete := true;
         switch(otype) { case (#Observer(_)) return; case (_) (); };
         for (li in listeners.vals()) {
           li.complete();

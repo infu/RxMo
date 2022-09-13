@@ -1,15 +1,18 @@
 import Debug "mo:base/Debug";
-import {Observable; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap; distinct} "../src/observable";
+import {Observable; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap; distinct; reduce; takeUntil} "../src/observable";
 import O "../src/observable";
 
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";
 
 import Time "mo:base/Time";
+import Text "mo:base/Text";
+
 import Array "mo:base/Array";
 import Nat16 "mo:base/Nat16";
 import Nat32 "mo:base/Nat32";
 import Nat "mo:base/Nat";
+import {runTest} "./util";
 
 
 // ----- Basic
@@ -55,7 +58,7 @@ var tst__x : Text = "";
 
 pipe2(
     of<Nat>( [1,1,2,1,3,4,4,5,5,5] ),
-    distinct<Nat>( Nat32.fromNat, Nat.equal)
+    distinct<Nat>( func (x) { Text.encodeUtf8(Nat.toText(x)) } ) // Has to return Blob, there are faster ways to convert Nat to Blob
     ).subscribe({
     next = func (v) {
         tst__x := tst__x # " " # debug_show(v);
@@ -205,6 +208,96 @@ pipe2(
         Debug.print(tst_4);
     }
 });
+
+// -----  Distinct
+
+
+Debug.print("===== Distinct ");
+
+type CustomThing = {
+    caller: Principal;
+    data: Nat;
+};
+
+runTest<CustomThing>(
+    pipe2(
+    of<CustomThing>([
+    {
+        caller = Principal.fromText("aaaaa-aa");
+        data=5
+    }, {
+        caller=Principal.fromText("aaaaa-aa");
+        data=9
+    }, {
+        caller=Principal.fromText("oqtwf-pmlo4-pgvqe-wg4xh-qkrlc-g6t5c-ga6tt-5cyi7-ih2rw-t423u-oae");
+        data=12
+    }
+    ]),
+    distinct<CustomThing>(func (x) { Principal.toBlob(x.caller) })
+),
+func (x) {debug_show(x)},
+" {caller = aaaaa-aa; data = 5} {caller = oqtwf-pmlo4-pgvqe-wg4xh-qkrlc-g6t5c-ga6tt-5cyi7-ih2rw-t423u-oae; data = 12} | "); // result
+
+
+
+// -----  Reduce
+
+
+Debug.print("===== Reduce ");
+
+type Vote = {
+    #yes;
+    #no
+};
+type VoteCounter = {
+    accept: Nat;
+    reject: Nat;
+};
+
+runTest<VoteCounter>(
+    pipe2(
+    of<Vote>([ #yes, #yes, #yes, #no, #no, #yes, #no, #yes, #yes ]),
+    reduce<Vote, VoteCounter>(func({accept; reject}, vote) { // count votes
+        switch(vote) {
+            case (#yes) ({accept = accept + 1; reject});
+            case (#no) ({accept; reject = reject + 1});
+        }
+    }, { accept = 0; reject = 0}), // default
+    ),
+    func (x) {debug_show(x)},
+    " {accept = 6; reject = 3} | " // result
+);
+
+
+// -----  Reduce
+
+
+Debug.print("===== takeUntil ");
+
+
+let main = Subject<Nat>();
+let trigger = Subject<Bool>();
+
+runTest<Nat>(pipe2(
+    main,
+    takeUntil<Nat, Bool>(trigger)
+),
+func (x) {debug_show(x)},
+" 1 2 3 4 | " // result
+);
+
+main.next(1);
+main.next(2);
+main.next(3);
+main.next(4);
+trigger.next(true); // this will trigger takeUntil and complete observer main, no more values will go thru
+main.next(5); // nothing should happen
+main.next(6); // nothing should happen
+trigger.next(true); // nothing should happen
+main.complete(); // again nothing should happen
+
+
+
 
 
 Debug.print("\n--END--");
