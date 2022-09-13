@@ -4,7 +4,7 @@ import Debug "mo:base/Debug";
 module {
     public func runTest<X>( obs: O.Obs<X>, toText: (X) -> Text, okText : Text ) {
     var te : Text = "";
-    obs.subscribe({
+    ignore obs.subscribe({
         next = func (v) {
             te := te # " " # toText(v);
         };

@@ -23,10 +23,13 @@ let ob = Observable<Nat>( func (subscriber) {
     subscriber.next(5);
     subscriber.next(12);
     subscriber.complete();
+    subscriber.next(1231); // nothing should happen after complete
+    subscriber.complete();
+
 });
 
 var tst_1 : Text = "";
-pipe3(
+ignore pipe3(
     ob,
     map<Nat,Nat16>( func (val) {
          Nat16.fromNat(val + 10)
@@ -56,7 +59,7 @@ let oz = map<Nat,Nat16>( func (val)  {
 Debug.print("=====  Basic ( Distinct )");
 var tst__x : Text = "";
 
-pipe2(
+ignore pipe2(
     of<Nat>( [1,1,2,1,3,4,4,5,5,5] ),
     distinct<Nat>( func (x) { Text.encodeUtf8(Nat.toText(x)) } ) // Has to return Blob, there are faster ways to convert Nat to Blob
     ).subscribe({
@@ -65,7 +68,7 @@ pipe2(
     };
     complete = func () {
         tst__x := tst__x # " | ";
-        if (tst__x == " 3 | ") tst__x := tst__x # "- OK ";
+        if (tst__x == " 1 2 3 4 5 | ") tst__x := tst__x # "- OK ";
         Debug.print(tst__x);
     }
 });
@@ -77,7 +80,7 @@ Debug.print("=====  Basic ( Of | First )");
 let ob_1 = of<Nat>( [3,5,12] );
 
 var tst__1 : Text = "";
-pipe2(
+ignore pipe2(
     ob_1,
     first<Nat>()
 ).subscribe({
@@ -108,7 +111,7 @@ let ob2 = Observable<O.Obs<Nat>>( func (subscriber) {
     subscriber.complete();
 });
 
-pipe2(
+ignore pipe2(
     ob2,
     concatAll<Nat>()
 
@@ -165,7 +168,7 @@ let ob3 = Observable<O.Obs<Nat>>( func (subscriber) {
     subscriber.complete();
 });
 
-pipe2(
+ignore pipe2(
     ob3,
     concatAll<Nat>()
  
@@ -188,7 +191,7 @@ Debug.print("===== Higher-order observables ( MergeMap )");
 
 var tst_4 : Text = "";
 
-pipe2(
+ignore pipe2(
     of<Text>(["A","B","C"]),
     mergeMap<Text,Text>( func(x) { 
         pipe2(

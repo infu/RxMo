@@ -37,7 +37,7 @@ type VoteCount = {
 
 let proposal = Subject<Vote>();
 
-pipe4(
+ignore pipe4(
     proposal,
     distinct<Vote>(func (x) { Principal.toBlob(x.caller) }), // don't let someone vote twice with the same principal
     takeUntil<Vote, Bool>(timerOnce(jazz, 60)), // Take votes until 60 seconds pass

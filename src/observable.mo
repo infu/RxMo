@@ -23,7 +23,7 @@ module {
         var isComplete : Bool = false;
         Observable<X>( func (subscriber) {
 
-          obsUntil.subscribe({
+          ignore obsUntil.subscribe({
             next = func (v) { 
               if (isComplete) return;
               isComplete := true;
@@ -32,7 +32,7 @@ module {
             complete = func () {}
           });
 
-          x.subscribe({
+          ignore x.subscribe({
             next = func(v) {
                if (isComplete) return;
                subscriber.next( v );
@@ -55,7 +55,7 @@ module {
     var acc = initial; 
     return func ( x : Obs<X> ) {
         Observable<Y>( func (subscriber) {
-          x.subscribe({
+          ignore x.subscribe({
             next = func(v) {
                acc := project(acc, v);
             };
@@ -73,7 +73,7 @@ module {
   public func map<X,Y>( project: (X) -> (Y) ) : (Obs<X>) -> (Obs<Y>) {
     return func ( x : Obs<X> ) {
         Observable<Y>( func (subscriber) {
-          x.subscribe({
+          ignore x.subscribe({
             next = func(v) {
                subscriber.next( project(v))
             };
@@ -91,7 +91,7 @@ module {
 
           var distinctKeys: TrieSet.Set<Blob> = TrieSet.empty<Blob>();
 
-          x.subscribe({
+          ignore x.subscribe({
             next = func(v) {
               let myKey = keySelect(v);
               let myHash = Blob.hash(myKey);
@@ -113,7 +113,7 @@ module {
     return func ( x : Obs<X> ) {
         Observable<X>( func (subscriber) {
           var first_one = true;
-          x.subscribe({
+          ignore x.subscribe({
             next = func(v) {
                if (first_one == false) return;
                subscriber.next( v );
@@ -159,7 +159,7 @@ module {
           let doInnerSub = func (obs : X) {
             active += 1;
 
-            project(obs).subscribe({
+            ignore project(obs).subscribe({
               next = func (v: Y) {
                 subscriber.next(v);
               };
@@ -177,7 +177,7 @@ module {
             });
           };
           
-          x.subscribe({
+          ignore x.subscribe({
               next = func(value : X) {
                  if (active < concurrent) {
                       doInnerSub(value);
@@ -233,6 +233,9 @@ module {
 
   public type SubscriberFn<A> = (Listener<A>) -> ();
 
+
+  public type UnsubscribeFn = () -> ();
+
   // Observable
   public class Obs<A>(
       otype : {#Observer: SubscriberFn<A>; #Subject}
@@ -240,10 +243,8 @@ module {
 
       // Subject specific
       var listeners = Buffer.Buffer<Listener<A>>(10);
-      // public var isComplete: Bool = false; // This doesnt affect Observable, only Subject
 
       public func next( val: A ) : () {
-        // if (isComplete) return;
         switch(otype) { case (#Observer(_)) return; case (_) (); };
         for (li in listeners.vals()) {
           li.next( val );
@@ -251,8 +252,6 @@ module {
       };
 
       public func complete() : () {
-        // if (isComplete) return;
-        // isComplete := true;
         switch(otype) { case (#Observer(_)) return; case (_) (); };
         for (li in listeners.vals()) {
           li.complete();
@@ -260,11 +259,22 @@ module {
       };
       // --- End Subject specific
 
-      public func subscribe( fn : Listener<A> ) : () {
+      public func subscribe( z : Listener<A> ) : UnsubscribeFn {
+        var ended : Bool = false;
+        let unsubscribeFn :UnsubscribeFn = func() {
+          ended := true;
+        };
+        let wrap:Listener<A> = {
+          next = func (x) { if (ended == false) z.next(x) };
+          complete = func (x) { if (ended == false) { z.complete(); unsubscribeFn(); } };
+        };
+
         switch(otype) {
-          case (#Observer(sub)) sub(fn);
-          case (#Subject) listeners.add(fn);
-        }
+          case (#Observer(sub)) sub(wrap);
+          case (#Subject) listeners.add(wrap);
+        };
+
+        unsubscribeFn;
       };
 
   };
