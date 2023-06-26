@@ -58,7 +58,7 @@ module {
     return obs;
   };
 
-  /// Delay
+  /// Delays the emission of items from the source Observable by a given timeout.
   public func delay<X>( sec: Nat ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
         Observable<X>( func (subscriber) {
@@ -152,6 +152,25 @@ module {
 
   /// Applies a given project function to each value emitted by the source Observable,
   /// and emits the resulting values as an Observable.
+  ///
+  /// Example:
+  /// ```motoko
+  /// ignore pipe3(
+  ///     ob,
+  ///     map<Nat,Nat16>( func (val) {
+  ///          Nat16.fromNat(val + 10)
+  ///     }),
+  ///     map<Nat16,Nat>( func (val)  {
+  ///          Nat16.toNat(val + 30)
+  ///     })
+  /// ).subscribe( {
+  ///     next = func (v) {
+  ///     };
+  ///     complete = func () {
+  ///     }
+  /// });
+  /// ```
+  ///
   public func map<X,Y>( project: (X) -> (Y) ) : (Obs<X>) -> (Obs<Y>) {
     return func ( x : Obs<X> ) {
         Observable<Y>( func (subscriber) {
@@ -249,7 +268,7 @@ module {
                 active -= 1;
 
                 while (List.size(buffer) > 0 and active < concurrent) {
-                  let ?bufferedValue = List.get(buffer, 0);
+                  let ?bufferedValue = List.get(buffer, 0) else Debug.trap("Internal Error");
                   buffer := List.drop(buffer, 1);
                   doInnerSub(bufferedValue);
                 };
@@ -279,6 +298,11 @@ module {
   };
 
   /// Creates observable and emits values from array
+  ///
+  /// Example:
+  /// ```motoko
+  /// of<Nat>( [1,1,2,1,3,4,4,5,5,5] )
+  /// ```
   public func of<X>( arr : [X] ) : Obs<X> {
     Observable<X>( func (subscriber) {
         for (el in arr.vals()) {
@@ -318,7 +342,7 @@ module {
 
   public type UnsubscribeFn = () -> ();
 
-  /// Observable
+  /// Observable Class
   public class Obs<A>(
       otype : {#Observer: SubscriberFn<A>; #Subject}
       ) = this {
@@ -361,17 +385,38 @@ module {
 
   };
 
-
-
+  /// An RxMO Subject is a special type of Observable that allows values to be multicasted to many Observers. While plain Observables are unicast (each subscribed Observer owns an independent execution of the Observable), Subjects are multicast.
+  ///
+  /// Example:
+  /// ```motoko
+  /// let main = Subject<Nat>();
+  /// main.next(3);
+  /// main.next(5);
+  /// ```
+  ///
   public func Subject<A>() : Obs<A>{
     Obs<A>(#Subject);
   };
 
+  /// Observables are lazy Push collections of multiple values. They fill the missing spot in the following table:
+  ///
+  /// Example:
+  /// ```motoko
+  /// let ob = Observable<Nat>( func (subscriber) {
+  ///     subscriber.next(3);
+  ///     subscriber.next(5);
+  ///     subscriber.next(12);
+  ///     subscriber.complete();
+  ///     subscriber.next(1231); // nothing should happen after complete
+  ///     subscriber.complete();
+  /// });
+  /// ```
+  ///
   public func Observable<A>( sub : (Listener<A>) -> () ) : Obs<A>{
     Obs<A>(#Observer(sub));
   };
 
-
+  /// A function that does nothing
   public let null_func = func () {};
   
 }
