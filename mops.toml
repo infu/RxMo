@@ -1,0 +1,8 @@
+[package]
+name = "rxmo"
+version = "0.1.0"
+description = "RxMO is a library for reactive programming using Observables, to make it easier to compose asynchronous or callback-based code."
+repository = "https://github.com/infu/rxmo"
+
+[dependencies]
+base = "0.9.2"

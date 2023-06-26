@@ -13,7 +13,7 @@ module {
 
   public type Operator<X,Y> = (Obs<X>) -> (Obs<Y>);
 
-  // Buffers the source Observable values until closingNotifier emits.
+  /// Buffers the source Observable values until closingNotifier emits.
   public func buffer<X>( closingNotifier: Obs<()> ) : (Obs<X>) -> (Obs<[X]>) {
 
     return func ( x : Obs<X> ) {
@@ -40,7 +40,7 @@ module {
   };
 
 
-  // Recurring timer
+  /// Recurring timer
   public func timer( sec: Nat ) : Obs<()> {
     let obs = Subject<()>();
 
@@ -58,7 +58,7 @@ module {
     return obs;
   };
 
-  // Delay
+  /// Delay
   public func delay<X>( sec: Nat ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
         Observable<X>( func (subscriber) {
@@ -81,24 +81,25 @@ module {
       }
   };
 
-  //
+  /// Completes after given time
   public func timerOnce( sec: Nat ) : Obs<()> {
 
     let obs = Subject<()>();
 
     let cancel = Timer.setTimer(#seconds sec, func() : async () {
           obs.next();
+          obs.complete();
       });
 
     return obs;
   };
 
-  // Emits the values emitted by the source Observable until a notifier Observable emits a value.
-  // `takeUntil` subscribes and begins mirroring the source Observable. It also
-  // monitors a second Observable, `notifier` that you provide. If the `notifier`
-  // emits a value, the output Observable stops mirroring the source Observable
-  // and completes. If the `notifier` doesn't emit any value and completes
-  // then `takeUntil` will pass all values.
+  /// Emits the values emitted by the source Observable until a notifier Observable emits a value.
+  /// `takeUntil` subscribes and begins mirroring the source Observable. It also
+  /// monitors a second Observable, `notifier` that you provide. If the `notifier`
+  /// emits a value, the output Observable stops mirroring the source Observable
+  /// and completes. If the `notifier` doesn't emit any value and completes
+  /// then `takeUntil` will pass all values.
   public func takeUntil<X,Y>( obsUntil: Obs<Y> ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
         var isComplete : Bool = false;
@@ -131,7 +132,7 @@ module {
   };
 
 
-  // Applies an accumulator function over the source Observable, and returns the accumulated result when the source completes, given an optional initial value.
+  /// Applies an accumulator function over the source Observable, and returns the accumulated result when the source completes, given an optional initial value.
   public func reduce<X,Y>( project: (Y, X) -> (Y), initial: Y ) : (Obs<X>) -> (Obs<Y>) {
     var acc = initial; 
     return func ( x : Obs<X> ) {
@@ -149,8 +150,8 @@ module {
       }
   };
 
-  // Applies a given project function to each value emitted by the source Observable,
-  // and emits the resulting values as an Observable.
+  /// Applies a given project function to each value emitted by the source Observable,
+  /// and emits the resulting values as an Observable.
   public func map<X,Y>( project: (X) -> (Y) ) : (Obs<X>) -> (Obs<Y>) {
     return func ( x : Obs<X> ) {
         Observable<Y>( func (subscriber) {
@@ -164,7 +165,7 @@ module {
       }
   };
 
-  //Returns an Observable that emits all items emitted by the source Observable that are distinct by comparison from previous items.
+  /// Returns an Observable that emits all items emitted by the source Observable that are distinct by comparison from previous items.
   public func distinct<X>( keySelect: (X) -> Blob ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
 
@@ -189,7 +190,7 @@ module {
   };
 
 
-  // Emits only the first value (or the first value that meets some condition) emitted by the source Observable.
+  /// Emits only the first value (or the first value that meets some condition) emitted by the source Observable.
   public func first<X>( ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
         Observable<X>( func (subscriber) {
@@ -210,19 +211,19 @@ module {
     }
   };
 
-  // Joins every Observable emitted by the source (a higher-order Observable), in a serial fashion.
-  // It subscribes to each inner Observable only after the previous inner Observable has completed, 
-  // and merges all of their values into the returned observable.
+  /// Joins every Observable emitted by the source (a higher-order Observable), in a serial fashion.
+  /// It subscribes to each inner Observable only after the previous inner Observable has completed, 
+  /// and merges all of their values into the returned observable.
   public func concatAll<X>( ) : (Obs<Obs<X>>) -> (Obs<X>) {
       mergeInternals<Obs<X>, X>(1, func (x) {x} )
   };
 
-  // Projects each source value to an Observable which is merged in the output Observable.
+  /// Projects each source value to an Observable which is merged in the output Observable.
   public func mergeMap<X,Y>( project: (X) -> (Obs<Y>), concurrent: Nat ) : (Obs<X>) -> (Obs<Y>) {
       mergeInternals<X,Y>(concurrent, project)
   };
 
-  // A process embodying the general "merge" strategy.
+  /// A process embodying the general "merge" strategy.
   private func mergeInternals<X,Y>(concurrent : Nat, project: (X) -> (Obs<Y>) ) : (Obs<X>) -> (Obs<Y>) {
     return func ( x : Obs<X> ) {
         Observable<Y>( func (subscriber) {
@@ -277,7 +278,7 @@ module {
     }
   };
 
-  // Creates observable and emits values from array
+  /// Creates observable and emits values from array
   public func of<X>( arr : [X] ) : Obs<X> {
     Observable<X>( func (subscriber) {
         for (el in arr.vals()) {
@@ -317,7 +318,7 @@ module {
 
   public type UnsubscribeFn = () -> ();
 
-  // Observable
+  /// Observable
   public class Obs<A>(
       otype : {#Observer: SubscriberFn<A>; #Subject}
       ) = this {

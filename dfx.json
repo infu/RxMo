@@ -7,5 +7,10 @@
       "type": "ephemeral"
     }
   },
+  "defaults": {
+    "build": {
+      "packtool": "mops sources"
+    }
+  },
   "version": 1
 }
