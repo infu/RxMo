@@ -5,12 +5,93 @@ import TrieSet "mo:base/TrieSet";
 import Hash "mo:base/Hash";
 import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
+import Timer "mo:base/Timer";
+import Array "mo:base/Array";
 
 module {
 
 
   public type Operator<X,Y> = (Obs<X>) -> (Obs<Y>);
 
+  // Buffers the source Observable values until closingNotifier emits.
+  public func buffer<X>( closingNotifier: Obs<()> ) : (Obs<X>) -> (Obs<[X]>) {
+
+    return func ( x : Obs<X> ) {
+        Observable<[X]>( func (subscriber) {
+
+          var buffer : List.List<X> = List.nil();
+          
+          ignore closingNotifier.subscribe({
+              next = func(z:()) {
+                subscriber.next( Array.reverse(List.toArray(buffer)) );
+                buffer := List.nil();
+              };
+              complete = subscriber.complete
+          });
+          
+          ignore x.subscribe({
+            next = func(v) {
+                buffer := List.push<X>(v, buffer);
+            };
+            complete = subscriber.complete
+          })
+        });
+      }
+  };
+
+
+  // Recurring timer
+  public func timer( sec: Nat ) : Obs<()> {
+    let obs = Subject<()>();
+
+    let timerId = Timer.recurringTimer(#seconds sec, func() : async () {
+          obs.next(());
+      });
+
+    ignore obs.subscribe({
+       next = func () {};
+       complete = func() {
+            Timer.cancelTimer(timerId);
+       }
+      });
+      
+    return obs;
+  };
+
+  // Delay
+  public func delay<X>( sec: Nat ) : (Obs<X>) -> (Obs<X>) {
+    return func ( x : Obs<X> ) {
+        Observable<X>( func (subscriber) {
+          var timerId : ?Timer.TimerId = null; 
+          ignore x.subscribe({
+            next = func(v) {
+                timerId := ?Timer.setTimer(#seconds sec, func() : async () {
+                    subscriber.next( v )
+                });
+            };
+            complete = func (v) {
+              switch(timerId) {
+                case (?id) Timer.cancelTimer(id);
+                case (null) ();
+              };
+              subscriber.complete();
+              }
+          })
+        });
+      }
+  };
+
+  //
+  public func timerOnce( sec: Nat ) : Obs<()> {
+
+    let obs = Subject<()>();
+
+    let cancel = Timer.setTimer(#seconds sec, func() : async () {
+          obs.next();
+      });
+
+    return obs;
+  };
 
   // Emits the values emitted by the source Observable until a notifier Observable emits a value.
   // `takeUntil` subscribes and begins mirroring the source Observable. It also
@@ -290,4 +371,6 @@ module {
   };
 
 
+  public let null_func = func () {};
+  
 }
