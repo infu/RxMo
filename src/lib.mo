@@ -58,13 +58,13 @@ module {
 
   /// Delays the emission of items from the source Observable by a given timeout.
   /*
-  public func delay<system, X>( sec: Nat ) : (Obs<X>) -> (Obs<X>) {
+  public func delay<X>( sec: Nat ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
         Observable<X>( func (subscriber) {
           var timerId : ?Timer.TimerId = null; 
           ignore x.subscribe({
-            next = func<system>(v:X) {
-                timerId := ?Timer.setTimer<system>(#seconds sec, func() : async () {
+            next = func(v:X) {
+                timerId := ?Timer.setTimer(#seconds sec, func() : async () {
                     subscriber.next( v )
                 });
             };
