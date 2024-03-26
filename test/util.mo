@@ -1,4 +1,4 @@
-import O "../src/observable";
+import O "../src/lib";
 import Debug "mo:base/Debug";
 
 module {

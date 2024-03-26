@@ -1,6 +1,6 @@
 import Debug "mo:base/Debug";
-import {Observable; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap; distinct; reduce; takeUntil} "../src/observable";
-import O "../src/observable";
+import {Observable; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap; distinct; reduce; takeUntil} "../src/lib";
+import O "../src/lib";
 
 import Principal "mo:base/Principal";
 import Buffer "mo:base/Buffer";

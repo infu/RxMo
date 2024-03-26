@@ -1,4 +1,4 @@
-import {Observable; null_func; delay; buffer; timerOnce; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap; distinct; reduce; takeUntil} "./observable";
+import {Observable; null_func;  buffer; timerOnce; Subject; of; pipe2; pipe3; pipe4; first; map; concatAll; mergeMap; distinct; reduce; takeUntil} "../src/lib";
 import Principal "mo:base/Principal";
 import Timer "mo:base/Timer";
 import Array "mo:base/Array";
@@ -10,10 +10,9 @@ actor Echo {
 
   var count :Nat = 0;
 
-  ignore pipe3(
+  ignore pipe2(
       bump,
       buffer<Nat>(trigger),
-      delay<[Nat]>(3)
   ).subscribe( {
       next = func (buf) {
           count += Array.foldRight<Nat, Nat>(buf, 0, func(x, acc) = x + acc)
