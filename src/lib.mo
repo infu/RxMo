@@ -63,7 +63,7 @@ module {
         Observable<X>( func (subscriber) {
           var timerId : ?Timer.TimerId = null; 
           ignore x.subscribe({
-            next = func(v:X) {
+            next = func(v) {
                 timerId := ?Timer.setTimer(#seconds sec, func() : async () {
                     subscriber.next( v )
                 });
