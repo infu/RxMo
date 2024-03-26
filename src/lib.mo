@@ -1,8 +1,6 @@
 import List "mo:base/List";
 import Buffer "mo:base/Buffer";
-import TrieMap "mo:base/TrieMap";
 import TrieSet "mo:base/TrieSet";
-import Hash "mo:base/Hash";
 import Blob "mo:base/Blob";
 import Debug "mo:base/Debug";
 import Timer "mo:base/Timer";
@@ -41,10 +39,10 @@ module {
 
 
   /// Recurring timer
-  public func timer( sec: Nat ) : Obs<()> {
+  public func timer<system>( sec: Nat ) : Obs<()> {
     let obs = Subject<()>();
 
-    let timerId = Timer.recurringTimer(#seconds sec, func() : async () {
+    let timerId = Timer.recurringTimer<system>(#seconds sec, func() : async () {
           obs.next(());
       });
 
@@ -59,6 +57,7 @@ module {
   };
 
   /// Delays the emission of items from the source Observable by a given timeout.
+  /*
   public func delay<X>( sec: Nat ) : (Obs<X>) -> (Obs<X>) {
     return func ( x : Obs<X> ) {
         Observable<X>( func (subscriber) {
@@ -80,13 +79,14 @@ module {
         });
       }
   };
+  */
 
   /// Completes after given time
-  public func timerOnce( sec: Nat ) : Obs<()> {
+  public func timerOnce<system>( sec: Nat ) : Obs<()> {
 
     let obs = Subject<()>();
 
-    let cancel = Timer.setTimer(#seconds sec, func() : async () {
+    let _cancel = Timer.setTimer<system>(#seconds sec, func() : async () {
           obs.next();
           obs.complete();
       });
