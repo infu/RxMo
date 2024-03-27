@@ -6,12 +6,6 @@ Not a full RxMo implementation. Work in progress.
 
 Currently has Observable, Subject, pipe, of, map, first, concatAll, mergeMap
 
-Missing: 
-- Unsubscribe
-- Async
-- Many operators
-- Schedulers
-
 ## Playground example 
 https://m7sm4-2iaaa-aaaab-qabra-cai.raw.ic0.app/?tag=3129927563
 
@@ -44,8 +38,7 @@ A1 A2 A3 A4 A5 A6 B1 B2 B3 B4 B5 B6 C1 C2 C3 C4 C5 C6
 ```
 
 ## Run tests
-./helpers/test.sh
+`npx mocv bin`/moc -r `mops sources` test/test.mo
 
-## Monitor tests
-./helpers/monitor.sh
+
 
